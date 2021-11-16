@@ -32,7 +32,7 @@ def list_recordings(
             'Authorization': 'Bearer {}'.format(tokens['access_token']),
             'Content-Type': 'application/json',
         },
-        data=request.json(),
+        params=request.dict(by_alias=True, exclude_defaults=True),
     )
 
     if rsp.status_code != 200:
@@ -55,7 +55,10 @@ def fetch_all_meetings(
     meetings = []
     next_page_token = None
     while True:
-        request = dict(from_date=from_date, to_date=to_date)
+        request = {
+            'from': from_date,
+            'to': to_date,
+        }
         if next_page_token:
             request['next_page_token'] = next_page_token
         request = AccountsRecordingsRequest(**request)
