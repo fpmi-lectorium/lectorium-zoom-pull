@@ -5,6 +5,7 @@ import os.path
 import subprocess
 import urllib.parse
 import typing as tp
+import datetime
 
 import requests
 
@@ -17,6 +18,7 @@ from lectorium_zoom_pull.models import (
     RecordingFile,
     FileType,
 )
+from lectorium_zoom_pull.months import RU_MONTHS
 
 
 #
@@ -88,20 +90,30 @@ def is_downloadable(rfile: RecordingFile) -> bool:
     )
 
 
-def make_meeting_dir(prefix: str, meeting: Meeting) -> tp.Optional[str]:
-    name = '{} {} {}'.format(
-        meeting.start_time,
-        meeting.topic,
-        meeting.id,
+def meeting_dir_path(prefix: str, meeting: Meeting) -> str:
+    def by_month(date: datetime.date) -> str:
+        return '{}.{} - {}'.format(
+            date.year,
+            date.month,
+            RU_MONTHS[date.month - 1]
+        )
+
+    def by_day(date: datetime.date) -> str:
+        return '{}.{}.{}'.format(
+            date.year,
+            date.month,
+            date.day
+        )
+
+    if meeting.topic.count('/') > 0:
+        raise ValueError(f'Bad meeting topic: {meeting.topic}')
+
+    return os.path.join(
+        prefix,
+        by_month(meeting.start_time.date()),
+        by_day(meeting.start_time.date()),
+        f'{meeting.topic} {meeting.id}',
     )
-    if name.count('/') > 0:
-        raise ValueError('Bad subdir name: {name}')
-    else:
-        path = os.path.join(prefix, name)
-
-    os.mkdir(path)
-    return path
-
 
 def download_recording_file(
     config: Config,
@@ -138,8 +150,9 @@ def download_meeting_recording(
     if len(files) == 0:
         return 'No downloadable files'
 
+    subdir = meeting_dir_path(prefix, meeting)
     try:
-        subdir = make_meeting_dir(prefix, meeting)
+        os.makedirs(subdir, exist_ok=False)
     except FileExistsError:
         return 'Already downloaded'
 
