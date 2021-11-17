@@ -18,8 +18,17 @@ def jwt_access_token(config: Config) -> str:
         'iss': config.api_key.get_secret_value(),
         'exp': expiration
     }
-    return jwt.encode(
+    encoded = jwt.encode(
         payload,
         config.api_secret.get_secret_value(),
         algorithm=ALGORITHM
     )
+
+    # Different versions of PyJWT return `bytes' or `str'
+    #
+    # 1.7.1, which is system-provided in Ubuntu 20.04.3, returns `bytes'
+    # Starting 2.0.0, docs claim to return `str'
+    if isinstance(encoded, bytes):
+        encoded = encoded.decode()
+
+    return encoded
