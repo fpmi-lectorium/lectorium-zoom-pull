@@ -64,8 +64,8 @@ def fetch_all_meetings(
         request = AccountsRecordingsRequest(**request)
 
         batch = list_recordings(config, request)
-        print('Page size:', batch.page_size)
-        print('Total records:', batch.total_records)
+        logging.debug('Page size: %d', batch.page_size)
+        logging.info('Total records: %d', batch.total_records)
         meetings.extend(batch.meetings)
 
         next_page_token = batch.next_page_token
@@ -118,6 +118,7 @@ def meeting_dir_path(prefix: str, meeting: Meeting) -> str:
 def download_recording_file(
     config: Config,
     prefix: str,
+    meeting: Meeting,
     rfile: RecordingFile,
 ) -> None:
     redirect = requests.get(
@@ -130,14 +131,26 @@ def download_recording_file(
 
     status = redirect.status_code
     if not (300 <= status and status < 400):
-        logging.error(redirect.status_code, redirect.text)
+        logging.error(
+            'Expected redirect for %s: %s %s',
+            rfile.download_url, redirect.status_code, redirect.text
+        )
         raise RuntimeError(f'Expected redirect for {rfile.download_url}')
 
     redirect_url = redirect.headers['Location']
     redirect_url_path = urllib.parse.urlparse(redirect_url).path
     filename = os.path.basename(redirect_url_path)
 
-    cmdline = ['curl', '-s', redirect_url, '-o', filename]
+    cmdline = [
+        'curl',
+        '-#' if config.download_progress else '-s',
+        redirect_url,
+        '-o',
+        filename
+    ]
+    logging.debug('Command line: %s', cmdline)
+
+    logging.info('Downloading %s / %s', meeting.id, filename)
     subprocess.check_call(cmdline, cwd=prefix)
 
 
@@ -157,6 +170,6 @@ def download_meeting_recording(
         return 'Already downloaded'
 
     for rfile in files:
-        download_recording_file(config, subdir, rfile)
+        download_recording_file(config, subdir, meeting, rfile)
 
     return f'Fetched {len(files)} files'

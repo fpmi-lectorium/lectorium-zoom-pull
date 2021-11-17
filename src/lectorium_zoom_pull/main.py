@@ -25,25 +25,44 @@ def filter_meeting_id_in(meeting_ids: tp.Set[str]) -> callable:
     return filter_callable
 
 
+pass_config = click.make_pass_decorator(Config)
+
+
 @click.group()
-def main():
-    pass
+@click.option('--debug/--no-debug', default=False)
+@click.option('--download-progress/--no-download-progress', default=True)
+@click.option('--secrets-dir', envvar='LZP_SECRETS_DIR')
+@click.pass_context
+def main(ctx, debug, download_progress, secrets_dir):
+    config = dict()
+
+    if debug is not None:
+        config.update(debug=debug)
+    if download_progress is not None:
+        config.update(download_progress=download_progress)
+    if secrets_dir is not None:
+        config.update(_secrets_dir=secrets_dir)
+
+    config = Config(**config)
+
+    loglevel = logging.DEBUG if config.debug else logging.INFO
+    logging.basicConfig(level=loglevel)
+
+    ctx.obj = config
 
 
 @main.command('list')
-@click.option('--secrets-dir')
 @click.option('--from-date')
 @click.option('--to-date')
 @click.option('--topic-contains', multiple=True)
+@pass_config
 def list_records(
-    secrets_dir,
-    from_date, to_date,
+    config: Config,
+    from_date,
+    to_date,
     topic_contains
 ):
     topic_contains = list(topic_contains)
-    config = Config(
-        _secrets_dir=secrets_dir
-    )
 
     all_meetings = fetch_all_meetings(
         config,
@@ -52,7 +71,6 @@ def list_records(
     )
 
     if topic_contains:
-        print('tc', topic_contains)
         meetings = filter(
             filter_topic_contains(topic_contains),
             all_meetings
@@ -67,21 +85,19 @@ def list_records(
 
 
 @main.command('download')
-@click.option('--secrets-dir')
 @click.option('--from-date')
 @click.option('--to-date')
 @click.option('--meeting-ids')
 @click.option('--downloads-dir')
+@pass_config
 def download_records(
-    secrets_dir,
-    from_date, to_date,
+    config: Config,
+    from_date,
+    to_date,
     meeting_ids,
     downloads_dir
 ):
     meeting_ids = set(meeting_ids.split(','))
-    config = Config(
-        _secrets_dir=secrets_dir
-    )
 
     all_meetings = fetch_all_meetings(
         config,
@@ -101,7 +117,7 @@ def download_records(
         try:
             status = download_meeting_recording(config, downloads_dir, meet)
         except Exception as e:
-            logging.exception('dl failed')
+            logging.exception('Unhandled exception')
             status = f'Unhandled exception: {e}'
         fmt = '{:3} | MeetingID {} | {} | {} | {}'
         line = fmt.format(idx + 1, meet.id, meet.start_time, meet.topic, status)
