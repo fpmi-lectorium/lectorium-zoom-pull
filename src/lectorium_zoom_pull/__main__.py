@@ -1,4 +1,4 @@
-from lectorium_zoom_pull.main import main
+from lectorium_zoom_pull.cli import cli
 
 if __name__ == '__main__':
-    main()
+    cli()
