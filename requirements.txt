@@ -1,3 +1,4 @@
+PyJWT
 click
 pydantic
 requests
