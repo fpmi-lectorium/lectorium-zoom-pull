@@ -64,6 +64,7 @@ class Meeting(BaseModel):
 
 class AccountsRecordingsRequest(BaseModel):
     next_page_token: tp.Optional[str]
+    page_size: tp.Optional[int]
     from_date: tp.Optional[datetime.date] = Field(alias='from')
     to_date: tp.Optional[datetime.date] = Field(alias='to')
 

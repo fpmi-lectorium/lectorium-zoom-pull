@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import os.path
 import subprocess
@@ -7,6 +8,8 @@ import typing as tp
 
 import requests
 
+from lectorium_zoom_pull.auth import jwt_access_token
+from lectorium_zoom_pull.config import Config
 from lectorium_zoom_pull.models import (
     AccountsRecordingsRequest,
     AccountsRecordingsResponse,
@@ -21,49 +24,44 @@ from lectorium_zoom_pull.models import (
 #
 
 def list_recordings(
-    tokens,
+    config: Config,
     request: AccountsRecordingsRequest,
 ) -> AccountsRecordingsResponse:
     BASEURL = 'https://api.zoom.us/v2'
 
+    token = jwt_access_token(config)
     rsp = requests.get(
         BASEURL + '/accounts/me/recordings',
         headers={
-            'Authorization': 'Bearer {}'.format(tokens['access_token']),
+            'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json',
         },
         params=request.dict(by_alias=True, exclude_defaults=True),
     )
 
     if rsp.status_code != 200:
-        with open('error.out', 'w') as fd:
-            fd.write(rsp.text)
-
         raise ValueError('Bad response {}: {}'.format(
             rsp.status_code, rsp.text
         ))
-    with open('raw-response.json', 'w') as fd:
-        fd.write(rsp.text)
     return AccountsRecordingsResponse(**json.loads(rsp.text))
 
 
-
 def fetch_all_meetings(
-    tokens, account_id: str,
+    config: Config,
     from_date: str, to_date: str
 ) -> tp.List[Meeting]:
     meetings = []
     next_page_token = None
     while True:
         request = {
+            'page_size': 100,
+            'next_page_token': next_page_token,
             'from': from_date,
             'to': to_date,
         }
-        if next_page_token:
-            request['next_page_token'] = next_page_token
         request = AccountsRecordingsRequest(**request)
 
-        batch = list_recordings(tokens, request)
+        batch = list_recordings(config, request)
         print('Page size:', batch.page_size)
         print('Total records:', batch.total_records)
         meetings.extend(batch.meetings)
@@ -81,8 +79,7 @@ def fetch_all_meetings(
 
 
 def is_downloadable(rfile: RecordingFile) -> bool:
-    #FILE_TYPES = {FileType.MP4, FileType.M4A, FileType.CHAT}
-    FILE_TYPES = {FileType.M4A, FileType.CHAT}
+    FILE_TYPES = {FileType.MP4, FileType.M4A, FileType.CHAT}
 
     return (
         rfile.file_type in FILE_TYPES
@@ -106,11 +103,22 @@ def make_meeting_dir(prefix: str, meeting: Meeting) -> tp.Optional[str]:
     return path
 
 
-def download_recording_file(prefix: str, rfile: RecordingFile) -> None:
-    redirect = requests.get(rfile.download_url, allow_redirects=False)
+def download_recording_file(
+    config: Config,
+    prefix: str,
+    rfile: RecordingFile,
+) -> None:
+    redirect = requests.get(
+        rfile.download_url,
+        allow_redirects=False,
+        params={
+            'access_token': jwt_access_token(config)
+        }
+    )
 
     status = redirect.status_code
     if not (300 <= status and status < 400):
+        logging.error(redirect.status_code, redirect.text)
         raise RuntimeError(f'Expected redirect for {rfile.download_url}')
 
     redirect_url = redirect.headers['Location']
@@ -121,7 +129,11 @@ def download_recording_file(prefix: str, rfile: RecordingFile) -> None:
     subprocess.check_call(cmdline, cwd=prefix)
 
 
-def download_meeting_recording(prefix: str, meeting: Meeting) -> str:
+def download_meeting_recording(
+    config: Config,
+    prefix: str,
+    meeting: Meeting,
+) -> str:
     files = list(filter(is_downloadable, meeting.recording_files))
     if len(files) == 0:
         return 'No downloadable files'
@@ -132,6 +144,6 @@ def download_meeting_recording(prefix: str, meeting: Meeting) -> str:
         return 'Already downloaded'
 
     for rfile in files:
-        download_recording_file(subdir, rfile)
+        download_recording_file(config, subdir, rfile)
 
     return f'Fetched {len(files)} files'
