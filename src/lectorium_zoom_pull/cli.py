@@ -11,8 +11,8 @@ pass_config = click.make_pass_decorator(Config)
 
 
 @click.group()
-@click.option('--debug/--no-debug', default=False)
-@click.option('--download-progress/--no-download-progress', default=True)
+@click.option('--debug/--no-debug', default=None)
+@click.option('--download-progress/--no-download-progress', default=None)
 @click.option('--secrets-dir', envvar='LZP_SECRETS_DIR')
 @click.pass_context
 def cli(ctx, debug, download_progress, secrets_dir):
@@ -56,8 +56,8 @@ def list_records(
 @cli.command('download')
 @click.option('--from-date')
 @click.option('--to-date')
-@click.option('--meeting-ids')
-@click.option('--downloads-dir')
+@click.option('--meeting-ids', required=True)
+@click.option('--downloads-dir', required=True)
 @pass_config
 def download_records(
     config: Config,
