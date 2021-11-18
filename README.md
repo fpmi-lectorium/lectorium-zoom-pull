@@ -2,6 +2,15 @@
 
 Tool to interact with Zoom Cloud Recordings API
 
+# Build and install
+
+```
+$ git clone https://github.com/bcskda/lectorium-zoom-pull
+$ cd https://github.com/bcskda/lectorium-zoom-pull
+$ python3 -m build
+$ sudo pip3 install dist/lectorium_zoom_pull-0.0.2-py3-none-any.whl
+```
+
 # Quick example
 
 List recent recordings with topics containing "ФПМИ" or "Б05"
