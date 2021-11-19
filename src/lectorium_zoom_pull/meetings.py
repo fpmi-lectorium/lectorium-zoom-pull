@@ -91,27 +91,22 @@ def is_downloadable(rfile: RecordingFile) -> bool:
 
 
 def meeting_dir_path(prefix: str, meeting: Meeting) -> str:
-    def by_month(date: datetime.date) -> str:
-        return '{}.{} - {}'.format(
-            date.year,
-            date.month,
-            RU_MONTHS[date.month - 1]
+    def by_month(start_time: datetime.datetime) -> str:
+        return '{:%Y.%m} - {}'.format(
+            start_time,
+            RU_MONTHS[start_time.date().month - 1]
         )
 
-    def by_day(date: datetime.date) -> str:
-        return '{}.{}.{}'.format(
-            date.year,
-            date.month,
-            date.day
-        )
+    def by_day(start_time: datetime.datetime) -> str:
+        return '{:%Y.%m.%d}'.format(start_time)
 
     if meeting.topic.count('/') > 0:
         raise ValueError(f'Bad meeting topic: {meeting.topic}')
 
     return os.path.join(
         prefix,
-        by_month(meeting.start_time.date()),
-        by_day(meeting.start_time.date()),
+        by_month(meeting.start_time),
+        by_day(meeting.start_time),
         f'{meeting.topic} {meeting.id}',
     )
 
@@ -140,6 +135,7 @@ def download_recording_file(
     redirect_url = redirect.headers['Location']
     redirect_url_path = urllib.parse.urlparse(redirect_url).path
     filename = os.path.basename(redirect_url_path)
+    logging.debug('Filename: %s', filename)
 
     cmdline = [
         'curl',
@@ -164,6 +160,7 @@ def download_meeting_recording(
         return 'No downloadable files'
 
     subdir = meeting_dir_path(prefix, meeting)
+    logging.debug('Subdir: %s', subdir)
     try:
         os.makedirs(subdir, exist_ok=False)
     except FileExistsError:
