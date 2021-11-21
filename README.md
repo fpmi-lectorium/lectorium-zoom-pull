@@ -61,6 +61,8 @@ $ tree ./zoom-recordings
 4 directories, 6 files
 ```
 
+Download command can also filter with `--topic-contains`
+
 # Configuration
 
 See [Config class](/src/lectorium_zoom_pull/config.py)
@@ -92,5 +94,8 @@ Thanks to pydantic, these options can be configured via [secrets files](https://
 
 - `--from-date` - format YYYY-mm-dd, API default is since yesterday
 - `--to-date` - format YYYY-mm-dd, API default is up to today
-- `--meeting-ids` - comma-separated whitelist of Meeting IDs to download, required
+- `--meeting-ids` - comma-separated whitelist of Meeting IDs to download
+- `--topic-contains` - same as in `list` command
 - `--downloads-dir` - where to save downloads, required
+
+Note that `--meeting-ids` and `--topic-contains` are mutually exclusive

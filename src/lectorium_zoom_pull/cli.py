@@ -45,18 +45,20 @@ def list_records(
     topic_contains
 ):
     topic_contains = list(topic_contains)
+    meeting_filter = commands.filter_topic_contains(topic_contains)
     commands.list_records(
         config,
         from_date,
         to_date,
-        topic_contains
+        meeting_filter
     )
 
 
 @cli.command('download')
 @click.option('--from-date')
 @click.option('--to-date')
-@click.option('--meeting-ids', required=True)
+@click.option('--meeting-ids')
+@click.option('--topic-contains', multiple=True)
 @click.option('--downloads-dir', required=True)
 @pass_config
 def download_records(
@@ -64,13 +66,26 @@ def download_records(
     from_date,
     to_date,
     meeting_ids,
+    topic_contains,
     downloads_dir
 ):
-    meeting_ids = set(meeting_ids.split(','))
+    if meeting_ids and topic_contains:
+        logging.error('--meeting-ids and --topic-contains are mutually exclusive')
+
+    meeing_filter = None
+    if meeting_ids:
+        meeting_ids = set(meeting_ids.split(','))
+        meeting_filter = commands.filter_meeting_id_in(meeting_ids)
+    elif topic_contains:
+        topics = list(topic_contains)
+        meeting_filter = commands.filter_topic_contains(topics)
+    else:
+        logging.error('Specify --meeting-ids or at least one --topic-contains')
+
     commands.download_records(
         config,
         from_date,
         to_date,
-        meeting_ids,
+        meeting_filter,
         downloads_dir
     )

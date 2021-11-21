@@ -27,7 +27,7 @@ def list_records(
     config: Config,
     from_date: str,
     to_date: str,
-    topic_contains: tp.List[str]
+    meeting_filter: tp.Optional[tp.Callable[[Meeting], bool]]
 ) -> None:
     all_meetings = fetch_all_meetings(
         config,
@@ -35,11 +35,8 @@ def list_records(
         to_date=to_date
     )
 
-    if topic_contains:
-        meetings = filter(
-            filter_topic_contains(topic_contains),
-            all_meetings
-        )
+    if meeting_filter:
+        meetings = filter(meeting_filter, all_meetings)
     else:
         meetings = all_meetings
 
@@ -53,7 +50,7 @@ def download_records(
     config: Config,
     from_date: str,
     to_date: str,
-    meeting_ids: tp.List[str],
+    meeting_filter: tp.Callable[[Meeting], bool],
     downloads_dir: str
 ) -> None:
     all_meetings = fetch_all_meetings(
@@ -62,13 +59,7 @@ def download_records(
         to_date=to_date
     )
 
-    if meeting_ids:
-        meetings = filter(
-            filter_meeting_id_in(meeting_ids),
-            all_meetings
-        )
-    else:
-        meetings = all_meetings
+    meetings = filter(meeting_filter, all_meetings)
 
     for idx, meet in enumerate(meetings):
         try:
