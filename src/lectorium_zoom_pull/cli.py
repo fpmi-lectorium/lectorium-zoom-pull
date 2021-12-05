@@ -59,6 +59,7 @@ def list_records(
 @click.option('--to-date')
 @click.option('--meeting-ids')
 @click.option('--topic-contains', multiple=True)
+@click.option('--host-email-contains', multiple=True)
 @click.option('--downloads-dir', required=True)
 @pass_config
 def download_records(
@@ -67,20 +68,26 @@ def download_records(
     to_date,
     meeting_ids,
     topic_contains,
+    host_email_contains,
     downloads_dir
 ):
-    if meeting_ids and topic_contains:
-        logging.error('--meeting-ids and --topic-contains are mutually exclusive')
+    if meeting_ids and topic_contains and host_email_contains:
+        logging.error('--meeting-ids, --topic-contains and --host-email-contains '
+                      'are mutually exclusive')
 
     meeing_filter = None
     if meeting_ids:
         meeting_ids = set(meeting_ids.split(','))
         meeting_filter = commands.filter_meeting_id_in(meeting_ids)
     elif topic_contains:
-        topics = list(topic_contains)
-        meeting_filter = commands.filter_topic_contains(topics)
+        substrings = list(topic_contains)
+        meeting_filter = commands.filter_topic_contains(substrings)
+    elif host_email_contains:
+        substrings = list(host_email_contains)
+        meeting_filter = commands.filter_host_email_contains(substrings)
     else:
-        logging.error('Specify --meeting-ids or at least one --topic-contains')
+        logging.error('Specify one of: '
+                      '--meeting-ids, --topic-contains, --host-email-contains')
 
     commands.download_records(
         config,

@@ -23,6 +23,13 @@ def filter_meeting_id_in(meeting_ids: tp.Set[str]) -> callable:
     return filter_callable
 
 
+def filter_host_email_contains(substrings: tp.List[str]) -> callable:
+    def filter_callable(meeting: Meeting) -> bool:
+        return any([meeting.host_email.count(s) for s in substrings])
+
+    return filter_callable
+
+
 def list_records(
     config: Config,
     from_date: str,

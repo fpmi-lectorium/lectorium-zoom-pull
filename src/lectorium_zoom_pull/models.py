@@ -51,6 +51,7 @@ class Meeting(BaseModel):
     account_id: str
     
     host_id: str
+    host_email: str
     topic: str
     
     start_time: datetime.datetime
