@@ -37,15 +37,30 @@ def cli(ctx, debug, download_progress, secrets_dir):
 @click.option('--from-date')
 @click.option('--to-date')
 @click.option('--topic-contains', multiple=True)
+@click.option('--host-email-contains', multiple=True)
 @pass_config
 def list_records(
     config: Config,
     from_date,
     to_date,
-    topic_contains
+    topic_contains,
+    host_email_contains,
 ):
-    topic_contains = list(topic_contains)
-    meeting_filter = commands.filter_topic_contains(topic_contains)
+    if topic_contains and host_email_contains:
+        logging.error('--topic-contains and --host-email-contains '
+                      'are mutually exclusive')
+
+    meeting_filter = None
+    if topic_contains:
+        substrings = list(topic_contains)
+        meeting_filter = commands.filter_topic_contains(substrings)
+    elif host_email_contains:
+        substrings = list(host_email_contains)
+        meeting_filter = commands.filter_host_email_contains(substrings)
+    else:
+        logging.error('Specify one of: '
+                      '--topic-contains, --host-email-contains')
+
     commands.list_records(
         config,
         from_date,
@@ -75,7 +90,7 @@ def download_records(
         logging.error('--meeting-ids, --topic-contains and --host-email-contains '
                       'are mutually exclusive')
 
-    meeing_filter = None
+    meeting_filter = None
     if meeting_ids:
         meeting_ids = set(meeting_ids.split(','))
         meeting_filter = commands.filter_meeting_id_in(meeting_ids)
