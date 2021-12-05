@@ -60,6 +60,7 @@ def list_records(
     else:
         logging.error('Specify one of: '
                       '--topic-contains, --host-email-contains')
+        raise ValueError('Invalid cli')
 
     commands.list_records(
         config,
@@ -103,6 +104,7 @@ def download_records(
     else:
         logging.error('Specify one of: '
                       '--meeting-ids, --topic-contains, --host-email-contains')
+        raise ValueError('Invalid cli')
 
     commands.download_records(
         config,
