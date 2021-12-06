@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import os.path
+import re
 import subprocess
 import urllib.parse
 import typing as tp
@@ -19,6 +20,9 @@ from lectorium_zoom_pull.models import (
     FileType,
 )
 from lectorium_zoom_pull.months import RU_MONTHS
+
+
+REPLACE_IN_PATH = re.compile(r'[<>:"/\|?*]')
 
 
 #
@@ -90,6 +94,11 @@ def is_downloadable(rfile: RecordingFile) -> bool:
     )
 
 
+def sanitize_path(path: str) -> str:
+    replaced, _replacements = REPLACE_IN_PATH.subn(' ', path)
+    return replaced
+
+
 def meeting_dir_path(prefix: str, meeting: Meeting) -> str:
     def by_month(start_time: datetime.datetime) -> str:
         return '{:%Y.%m} - {}'.format(
@@ -100,14 +109,11 @@ def meeting_dir_path(prefix: str, meeting: Meeting) -> str:
     def by_day(start_time: datetime.datetime) -> str:
         return '{:%Y.%m.%d}'.format(start_time)
 
-    if meeting.topic.count('/') > 0:
-        raise ValueError(f'Bad meeting topic: {meeting.topic}')
-
     return os.path.join(
         prefix,
         by_month(meeting.start_time),
         by_day(meeting.start_time),
-        f'{meeting.topic} {meeting.id}',
+        sanitize_path(f'{meeting.topic} {meeting.id}'),
     )
 
 def download_recording_file(
