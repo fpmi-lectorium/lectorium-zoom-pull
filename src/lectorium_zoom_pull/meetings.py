@@ -25,6 +25,13 @@ from lectorium_zoom_pull.months import RU_MONTHS
 REPLACE_IN_PATH = re.compile(r'[<>:"/\|?*]')
 
 
+def encode_meeting_id(meeting_id: str) -> str:
+    if meeting_id.startswith('/') or meeting_id.count('//') > 0:
+        return urllib.parse.urlencode(meeting_id)
+    else:
+        return meeting_id
+
+
 #
 # List
 #
@@ -77,6 +84,35 @@ def fetch_all_meetings(
             break
 
     return meetings
+
+
+#
+# Delete
+#
+
+
+def trash_meeting_recording(config: Config, meeting: Meeting) -> str:
+    BASEURL = 'https://api.zoom.us/v2'
+
+    token = jwt_access_token(config)
+    url = BASEURL + '/meetings/{}/recordings'.format(encode_meeting_id(meeting.uuid))
+    rsp = requests.delete(
+        url,
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json',
+        },
+        params={
+            'action': 'trash',
+        }
+    )
+
+    if rsp.status_code == 204:
+        return 'Trashed'
+    elif rsp.status_code == 200:
+        raise ValueError(f'API error for uuid {meeting.uuid}, details: {rsp.json()}')
+    else:
+        raise ValueError(f'Bad status code {rsp.status_code} for uuid {meeting.uuid}')
 
 
 #

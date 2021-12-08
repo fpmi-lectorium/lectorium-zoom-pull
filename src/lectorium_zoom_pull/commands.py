@@ -7,6 +7,7 @@ from lectorium_zoom_pull.models import Meeting
 from lectorium_zoom_pull.meetings import (
     fetch_all_meetings,
     download_meeting_recording,
+    trash_meeting_recording,
 )
 
 
@@ -71,7 +72,8 @@ def download_records(
     from_date: str,
     to_date: str,
     meeting_filter: tp.Callable[[Meeting], bool],
-    downloads_dir: str
+    downloads_dir: str,
+    trash_after_download: bool,
 ) -> None:
     all_meetings = fetch_all_meetings(
         config,
@@ -82,11 +84,15 @@ def download_records(
     meetings = filter(meeting_filter, all_meetings)
 
     for idx, meet in enumerate(meetings):
+        status = ''
         try:
-            status = download_meeting_recording(config, downloads_dir, meet)
+            status += download_meeting_recording(config, downloads_dir, meet)
+            if trash_after_download:
+                status += ' / ' + trash_meeting_recording(config, meet)
         except Exception as e:
             logging.exception('Unhandled exception')
-            status = f'Unhandled exception: {e}'
+            status += f'Unhandled exception: {e}'
+
         fmt = '{:3} | MeetingID {} | {} | {} | {}'
         line = fmt.format(idx + 1, meet.id, meet.start_time, meet.topic, status)
         print(line)
