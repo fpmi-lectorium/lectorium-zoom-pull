@@ -10,6 +10,43 @@ from lectorium_zoom_pull.config import Config
 pass_config = click.make_pass_decorator(Config)
 
 
+def make_meeting_filter(
+    meeting_ids: str = None,
+    topic_contains: tp.Sequence[str] = None,
+    topic_regex: str = None,
+    host_email_contains: tp.Sequence[str] = None,
+    host_email_regex: tp.Sequence[str] = None,
+) -> callable:
+    filters = [
+        meeting_ids,
+        topic_contains,
+        topic_regex,
+        host_email_contains,
+        host_email_regex,
+    ]
+    filters_count = sum(map(lambda arg: 1 if arg else 0, filters))
+    if filters_count > 1:
+        raise ValueError('Filters are mutually exclusive, specify exactly one')
+
+    if meeting_ids:
+        meeting_ids = set(meeting_ids.split(','))
+        return commands.Filter.meeting_id_in(meeting_ids)
+    elif topic_contains:
+        substrings = list(topic_contains)
+        return commands.Filter.topic_contains(substrings)
+    elif topic_regex:
+        expression = topic_regex
+        return commands.Filter.topic_regex(expression)
+    elif host_email_contains:
+        substrings = list(host_email_contains)
+        return commands.Filter.host_email_contains(substrings)
+    elif host_email_regex:
+        expression = host_email_regex
+        return commands.Filter.host_email_regex(expression)
+    else:
+        raise ValueError('Refusing to start without filters, specify exactly one')
+
+
 @click.group()
 @click.option('--debug/--no-debug', default=None)
 @click.option('--download-progress/--no-download-progress', default=None)
@@ -37,30 +74,25 @@ def cli(ctx, debug, download_progress, secrets_dir):
 @click.option('--from-date')
 @click.option('--to-date')
 @click.option('--topic-contains', multiple=True)
+@click.option('--topic-regex')
 @click.option('--host-email-contains', multiple=True)
+@click.option('--host-email-regex')
 @pass_config
 def list_records(
     config: Config,
     from_date,
     to_date,
     topic_contains,
+    topic_regex,
     host_email_contains,
+    host_email_regex,
 ):
-    if topic_contains and host_email_contains:
-        logging.error('--topic-contains and --host-email-contains '
-                      'are mutually exclusive')
-
-    meeting_filter = None
-    if topic_contains:
-        substrings = list(topic_contains)
-        meeting_filter = commands.filter_topic_contains(substrings)
-    elif host_email_contains:
-        substrings = list(host_email_contains)
-        meeting_filter = commands.filter_host_email_contains(substrings)
-    else:
-        logging.error('Specify one of: '
-                      '--topic-contains, --host-email-contains')
-        raise ValueError('Invalid cli')
+    meeting_filter = make_meeting_filter(
+        topic_contains=topic_contains,
+        topic_regex=topic_regex,
+        host_email_contains=host_email_contains,
+        host_email_regex=host_email_regex,
+    )
 
     commands.list_records(
         config,
@@ -75,8 +107,11 @@ def list_records(
 @click.option('--to-date')
 @click.option('--meeting-ids')
 @click.option('--topic-contains', multiple=True)
+@click.option('--topic-regex')
 @click.option('--host-email-contains', multiple=True)
+@click.option('--host-email-regex')
 @click.option('--downloads-dir', required=True)
+@click.option('--trash-after-download/--no-trash-after-download', default=False)
 @pass_config
 def download_records(
     config: Config,
@@ -84,32 +119,25 @@ def download_records(
     to_date,
     meeting_ids,
     topic_contains,
+    topic_regex,
     host_email_contains,
-    downloads_dir
+    host_email_regex,
+    downloads_dir,
+    trash_after_download,
 ):
-    if meeting_ids and topic_contains and host_email_contains:
-        logging.error('--meeting-ids, --topic-contains and --host-email-contains '
-                      'are mutually exclusive')
-
-    meeting_filter = None
-    if meeting_ids:
-        meeting_ids = set(meeting_ids.split(','))
-        meeting_filter = commands.filter_meeting_id_in(meeting_ids)
-    elif topic_contains:
-        substrings = list(topic_contains)
-        meeting_filter = commands.filter_topic_contains(substrings)
-    elif host_email_contains:
-        substrings = list(host_email_contains)
-        meeting_filter = commands.filter_host_email_contains(substrings)
-    else:
-        logging.error('Specify one of: '
-                      '--meeting-ids, --topic-contains, --host-email-contains')
-        raise ValueError('Invalid cli')
+    meeting_filter = make_meeting_filter(
+        meeting_ids=meeting_ids,
+        topic_contains=topic_contains,
+        topic_regex=topic_regex,
+        host_email_contains=host_email_contains,
+        host_email_regex=host_email_regex,
+    )
 
     commands.download_records(
         config,
         from_date,
         to_date,
         meeting_filter,
-        downloads_dir
+        downloads_dir,
+        trash_after_download,
     )
