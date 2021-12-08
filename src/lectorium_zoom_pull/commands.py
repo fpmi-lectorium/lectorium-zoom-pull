@@ -12,6 +12,11 @@ from lectorium_zoom_pull.meetings import (
 
 class Filter:
     @classmethod
+    def meeting_id_in(cls, meeting_ids: tp.Set[str]) -> callable:
+        the_filter = lambda meeting: meeting.id in meeting_ids
+        return the_filter
+
+    @classmethod
     def topic_contains(cls, substrings: tp.List[str]) -> callable:
         the_filter = lambda meeting: any(
             meeting.topic.count(s) for s in substrings
@@ -19,8 +24,9 @@ class Filter:
         return the_filter
 
     @classmethod
-    def meeting_id_in(cls, meeting_ids: tp.Set[str]) -> callable:
-        the_filter = lambda meeting: meeting.id in meeting_ids
+    def topic_regex(cls, expression: str) -> callable:
+        matcher = re.compile(expression)
+        the_filter = lambda meeting: bool(matcher.search(meeting.topic))
         return the_filter
 
     @classmethod
@@ -33,7 +39,7 @@ class Filter:
     @classmethod
     def host_email_regex(cls, expression: str) -> callable:
         matcher = re.compile(expression)
-        the_filter = lambda meeting: bool(matcher.match(meeting.host_email))
+        the_filter = lambda meeting: bool(matcher.search(meeting.host_email))
         return the_filter
 
 

@@ -13,10 +13,17 @@ pass_config = click.make_pass_decorator(Config)
 def make_meeting_filter(
     meeting_ids: str = None,
     topic_contains: tp.Sequence[str] = None,
+    topic_regex: str = None,
     host_email_contains: tp.Sequence[str] = None,
     host_email_regex: tp.Sequence[str] = None,
 ) -> callable:
-    filters = [meeting_ids, topic_contains, host_email_contains, host_email_regex]
+    filters = [
+        meeting_ids,
+        topic_contains,
+        topic_regex,
+        host_email_contains,
+        host_email_regex,
+    ]
     filters_count = sum(map(lambda arg: 1 if arg else 0, filters))
     if filters_count > 1:
         raise ValueError('Filters are mutually exclusive, specify exactly one')
@@ -27,6 +34,9 @@ def make_meeting_filter(
     elif topic_contains:
         substrings = list(topic_contains)
         return commands.Filter.topic_contains(substrings)
+    elif topic_regex:
+        expression = topic_regex
+        return commands.Filter.topic_regex(expression)
     elif host_email_contains:
         substrings = list(host_email_contains)
         return commands.Filter.host_email_contains(substrings)
@@ -64,6 +74,7 @@ def cli(ctx, debug, download_progress, secrets_dir):
 @click.option('--from-date')
 @click.option('--to-date')
 @click.option('--topic-contains', multiple=True)
+@click.option('--topic-regex')
 @click.option('--host-email-contains', multiple=True)
 @click.option('--host-email-regex')
 @pass_config
@@ -72,11 +83,13 @@ def list_records(
     from_date,
     to_date,
     topic_contains,
-    host_email_regex,
+    topic_regex,
     host_email_contains,
+    host_email_regex,
 ):
     meeting_filter = make_meeting_filter(
         topic_contains=topic_contains,
+        topic_regex=topic_regex,
         host_email_contains=host_email_contains,
         host_email_regex=host_email_regex,
     )
@@ -94,6 +107,7 @@ def list_records(
 @click.option('--to-date')
 @click.option('--meeting-ids')
 @click.option('--topic-contains', multiple=True)
+@click.option('--topic-regex')
 @click.option('--host-email-contains', multiple=True)
 @click.option('--host-email-regex')
 @click.option('--downloads-dir', required=True)
@@ -104,6 +118,7 @@ def download_records(
     to_date,
     meeting_ids,
     topic_contains,
+    topic_regex,
     host_email_contains,
     host_email_regex,
     downloads_dir
@@ -111,6 +126,7 @@ def download_records(
     meeting_filter = make_meeting_filter(
         meeting_ids=meeting_ids,
         topic_contains=topic_contains,
+        topic_regex=topic_regex,
         host_email_contains=host_email_contains,
         host_email_regex=host_email_regex,
     )
