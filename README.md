@@ -20,8 +20,8 @@ $ ls secrets
 lzp_account_id  lzp_api_key  lzp_api_secret
 $ export LZP_SECRETS_DIR=secrets
 $ python3 -m lectorium_zoom_pull list \
-    --from-date 2021-11-01 \
-    --topics-match ФПМИ --topics-match Б05
+    --from-date 2021-11-01 --to-date 2021-12-01 \
+    --topic-regex 'ФПМИ|Б05'
 INFO:root:Total records: 91
 1 | MeetingID xxxxxxxxxxxx | 2021-11-01 10:53:01+00:00 | Алгоритмы и структуры данных (YYYY, w семестр), ... (Фамилия И.О.)
 ```
@@ -34,8 +34,9 @@ lzp_account_id  lzp_api_key  lzp_api_secret
 $ export LZP_SECRETS_DIR=secrets
 $ python3 -m lectorium_zoom_pull download \
     --downloads-dir ./zoom-recordings
-    --from-date 2021-11-01 \
-    --meeting-ids xxxxxxxxxxx,zzzzzzzzzzz
+    --from-date 2021-11-01 --to-date 2021-12-01 \
+    --meeting-ids xxxxxxxxxxx,zzzzzzzzzzz \
+    --trash-after-download
 INFO:root:Total records: 91                                                                                                                                                                                                           
 INFO:root:Downloading xxxxxxxxxxx / GMT20211101-105301_Recording_avo_1280x720.mp4
 ################################################################################################################################ 100%
@@ -43,8 +44,8 @@ INFO:root:Downloading xxxxxxxxxxx / GMT20211101-105301_Recording.m4a
 ################################################################################################################################ 100%
 INFO:root:Downloading xxxxxxxxxxx / GMT20211101-105301_Recording.txt
 ################################################################################################################################ 100%
-1 | MeetingID xxxxxxxxxxx | 2021-11-01 10:53:01+00:00 | Алгоритмы и структуры данных (YYYY, w семестр), ... (Фамилия И.О.) | Fetched 3 files
-2 | MeetingID zzzzzzzzzzz  | 2021-11-01 06:57:00+00:00 | Общая физика (YYYY, w семестр), ... (Фамилия И.О.) | Already downloaded
+1 | MeetingID xxxxxxxxxxx | 2021-11-01 10:53:01+00:00 | Алгоритмы и структуры данных (YYYY, w семестр), ... (Фамилия И.О.) | Fetched 3 files / Trashed
+2 | MeetingID zzzzzzzzzzz  | 2021-11-01 06:57:00+00:00 | Общая физика (YYYY, w семестр), ... (Фамилия И.О.) | Already downloaded / Trashed
 $ tree ./zoom-recordings
 ./zoom-recorings
 └── 2021.11 - ноябрь
@@ -60,8 +61,6 @@ $ tree ./zoom-recordings
 
 4 directories, 6 files
 ```
-
-Download command can also filter with `--topic-contains`
 
 # Configuration
 
@@ -80,22 +79,34 @@ Thanks to pydantic, these options can be configured via [secrets files](https://
 ## Global options
 
 - `--help`
-- `--(no-)download-progress` - default on
+- `--(no-)download-progress` - default off
 - `--(no-)debug` - default off
 - `--secrets-dir` - path to look for configuration, default `/var/run/secrets`
 
+## Specifying time ranges
+
+- `--from-date` - format YYYY-mm-dd, API default is since yesterday
+- `--to-date` - format YYYY-mm-dd, API default is up to today
+
+__Important note: maximum allowed range is one month__.
+Longer range will be shrinked silently by API.
+
+## Filtering meetings
+
+- `--meeting-ids` - comma-separated whitelist of Meeting IDs to download
+- `--topic-contains` - certain substring in topic. Can be specified multiple times as "or"
+- `--topic-regex` - partial match of regular expression in topic
+- `--host-email-contains` - certain substring in host email. Can be specified multiple times as "or"
+- `--host-email-regex` - partial match of regular expression in host email
+
 ## List options
 
-- `--from-date` - format YYYY-mm-dd, API default is since yesterday
-- `--to-date` - format YYYY-mm-dd, API default is up to today
-- `--topic-contains` - only show recordings that have certain substring in topic. Can be specified multiple times as "or"
+- time range
+- meeting filters: all except `--meeting-ids`, mutually exclusive
 
-## Donwload options
+## Download options
 
-- `--from-date` - format YYYY-mm-dd, API default is since yesterday
-- `--to-date` - format YYYY-mm-dd, API default is up to today
-- `--meeting-ids` - comma-separated whitelist of Meeting IDs to download
-- `--topic-contains` - same as in `list` command
+- time range
+- meeting filters: all, mutually exclusive
 - `--downloads-dir` - where to save downloads, required
-
-Note that `--meeting-ids` and `--topic-contains` are mutually exclusive
+- `--(no-)trash-after-download` - trash a recording after it has been downloaded
