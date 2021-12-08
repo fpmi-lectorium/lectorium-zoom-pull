@@ -25,11 +25,15 @@ from lectorium_zoom_pull.months import RU_MONTHS
 REPLACE_IN_PATH = re.compile(r'[<>:"/\|?*]')
 
 
-def encode_meeting_id(meeting_id: str) -> str:
-    if meeting_id.startswith('/') or meeting_id.count('//') > 0:
-        return urllib.parse.urlencode(meeting_id)
+def encode_meeting_identifier(id_or_uuid: str) -> str:
+    if id_or_uuid.startswith('/') or id_or_uuid.count('//') > 0:
+        # As of now, id / uuid must be _double_ urlencoded
+        # https://devforum.zoom.us/t/double-encode-meeting-uuids/23729
+        single_encoded = urllib.parse.quote_plus(id_or_uuid)
+        double_encoded = urllib.parse.quote_plus(single_encoded)
+        return double_encoded
     else:
-        return meeting_id
+        return id_or_uuid
 
 
 #
@@ -95,7 +99,10 @@ def trash_meeting_recording(config: Config, meeting: Meeting) -> str:
     BASEURL = 'https://api.zoom.us/v2'
 
     token = jwt_access_token(config)
-    url = BASEURL + '/meetings/{}/recordings'.format(encode_meeting_id(meeting.uuid))
+    url = '{}/meetings/{}/recordings'.format(
+        BASEURL,
+        encode_meeting_identifier(meeting.uuid)
+    )
     rsp = requests.delete(
         url,
         headers={
