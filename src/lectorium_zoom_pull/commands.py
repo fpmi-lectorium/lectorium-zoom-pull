@@ -1,4 +1,5 @@
 import logging
+import re
 import typing as tp
 
 from lectorium_zoom_pull.config import Config
@@ -9,25 +10,31 @@ from lectorium_zoom_pull.meetings import (
 )
 
 
-def filter_topic_contains(substrings: tp.List[str]) -> callable:
-    def filter_callable(meeting: Meeting) -> bool:
-        return any([meeting.topic.count(s) for s in substrings])
+class Filter:
+    @classmethod
+    def topic_contains(cls, substrings: tp.List[str]) -> callable:
+        the_filter = lambda meeting: any(
+            meeting.topic.count(s) for s in substrings
+        )
+        return the_filter
 
-    return filter_callable
+    @classmethod
+    def meeting_id_in(cls, meeting_ids: tp.Set[str]) -> callable:
+        the_filter = lambda meeting: meeting.id in meeting_ids
+        return the_filter
 
+    @classmethod
+    def host_email_contains(cls, substrings: tp.List[str]) -> callable:
+        the_filter = lambda meeting: any(
+            meeting.host_email.count(s) for s in substrings
+        )
+        return the_filter
 
-def filter_meeting_id_in(meeting_ids: tp.Set[str]) -> callable:
-    def filter_callable(meeting: Meeting) -> bool:
-        return meeting.id in meeting_ids
-
-    return filter_callable
-
-
-def filter_host_email_contains(substrings: tp.List[str]) -> callable:
-    def filter_callable(meeting: Meeting) -> bool:
-        return any([meeting.host_email.count(s) for s in substrings])
-
-    return filter_callable
+    @classmethod
+    def host_email_regex(cls, expression: str) -> callable:
+        matcher = re.compile(expression)
+        the_filter = lambda meeting: bool(matcher.match(meeting.host_email))
+        return the_filter
 
 
 def list_records(
