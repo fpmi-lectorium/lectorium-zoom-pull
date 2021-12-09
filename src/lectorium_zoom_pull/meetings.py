@@ -65,7 +65,9 @@ def list_recordings(
 
 def fetch_all_meetings(
     config: Config,
-    from_date: str, to_date: str
+    from_date: tp.Optional[str] = None,
+    to_date: tp.Optional[str] = None,
+    trash: bool = False,
 ) -> tp.List[Meeting]:
     meetings = []
     next_page_token = None
@@ -75,6 +77,8 @@ def fetch_all_meetings(
             'next_page_token': next_page_token,
             'from': from_date,
             'to': to_date,
+            'trash': trash,
+            'trash_type': 'meeting_recordings' if trash else None,
         }
         request = AccountsRecordingsRequest(**request)
 
@@ -119,7 +123,47 @@ def trash_meeting_recording(config: Config, meeting: Meeting) -> str:
     elif rsp.status_code == 200:
         raise ValueError(f'API error for uuid {meeting.uuid}, details: {rsp.json()}')
     else:
-        raise ValueError(f'Bad status code {rsp.status_code} for uuid {meeting.uuid}')
+        raise ValueError(
+            'Bad status code {} for uuid {}, details: {}'.format(
+                rsp.status_code, meeting.uuid, rsp.text
+            )
+        )
+
+
+#
+# Restore
+#
+
+
+def restore_meeting_recording(config: Config, meeting: Meeting) -> str:
+    BASEURL = 'https://api.zoom.us/v2'
+
+    token = jwt_access_token(config)
+    url = '{}/meetings/{}/recordings/status'.format(
+        BASEURL,
+        encode_meeting_identifier(meeting.uuid)
+    )
+    rsp = requests.put(
+        url,
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json',
+        },
+        json={
+            'action': 'recover',
+        },
+    )
+
+    if rsp.status_code == 204:
+        return 'Restored'
+    elif rsp.status_code == 200:
+        raise ValueError(f'API error for uuid {meeting.uuid}, details: {rsp.json()}')
+    else:
+        raise ValueError(
+            'Bad status code {} for uuid {}, details: {}'.format(
+                rsp.status_code, meeting.uuid, rsp.text
+            )
+        )
 
 
 #
