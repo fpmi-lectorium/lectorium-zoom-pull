@@ -141,3 +141,32 @@ def download_records(
         downloads_dir,
         trash_after_download,
     )
+
+
+@cli.command('restore-trashed')
+@click.option('--meeting-ids')
+@click.option('--topic-contains', multiple=True)
+@click.option('--topic-regex')
+@click.option('--host-email-contains', multiple=True)
+@click.option('--host-email-regex')
+@pass_config
+def restore_trashed(
+    config: Config,
+    meeting_ids,
+    topic_contains,
+    topic_regex,
+    host_email_contains,
+    host_email_regex,
+):
+    meeting_filter = make_meeting_filter(
+        meeting_ids=meeting_ids,
+        topic_contains=topic_contains,
+        topic_regex=topic_regex,
+        host_email_contains=host_email_contains,
+        host_email_regex=host_email_regex,
+    )
+
+    commands.restore_trashed_records(
+        config,
+        meeting_filter,
+    )

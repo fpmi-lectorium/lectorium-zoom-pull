@@ -55,7 +55,7 @@ class Meeting(BaseModel):
     topic: str
     
     start_time: datetime.datetime
-    duration: int
+    duration: tp.Optional[int]
     
     total_size: int
     type: int
@@ -68,6 +68,23 @@ class AccountsRecordingsRequest(BaseModel):
     page_size: tp.Optional[int]
     from_date: tp.Optional[datetime.date] = Field(alias='from')
     to_date: tp.Optional[datetime.date] = Field(alias='to')
+    trash: tp.Optional[bool]
+    trash_type: tp.Optional[str]
+
+    @validator('trash')
+    def trash_prohibits_time_range(cls, v, values):
+        MUST_BE_NONE = ['from_date', 'to_date']
+        if v:
+            assert all(values.get(k) is None for k in MUST_BE_NONE)
+
+        return v
+
+    @validator('trash_type')
+    def trash_type_requires_trash(cls, v, values):
+        if v:
+            assert values.get('trash')
+
+        return v
 
 
 class AccountsRecordingsResponse(BaseModel):
