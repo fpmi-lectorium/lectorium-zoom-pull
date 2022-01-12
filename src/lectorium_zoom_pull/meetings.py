@@ -196,11 +196,14 @@ def meeting_dir_path(prefix: str, meeting: Meeting) -> str:
     def by_day(start_time: datetime.datetime) -> str:
         return '{:%Y.%m.%d}'.format(start_time)
 
+    dir_name = sanitize_path(
+      f'{meeting.topic} {meeting.id} {meeting.start_time:%H-%M-%S%z}'
+    )
     return os.path.join(
         prefix,
         by_month(meeting.start_time),
         by_day(meeting.start_time),
-        sanitize_path(f'{meeting.topic} {meeting.id}'),
+        dir_name
     )
 
 def download_recording_file(
