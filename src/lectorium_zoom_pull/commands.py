@@ -88,10 +88,10 @@ def download_records(
 
     meetings = filter(meeting_filter, all_meetings)
 
-    for idx, meet in enumerate(meetings):
-        status = ''
-        try:
-            with open(csv_log_path, 'a') as csv_log:
+    with open(csv_log_path, 'a') as csv_log:
+        for idx, meet in enumerate(meetings):
+            status = ''
+            try:
                 status += download_meeting_recording(
                     config,
                     path_manager,
@@ -99,15 +99,15 @@ def download_records(
                     csv_paths_relative_to,
                     meet
                 )
-            if trash_after_download:
-                status += ' / ' + trash_meeting_recording(config, meet)
-        except Exception as e:
-            logging.exception('Unhandled exception')
-            status += f'Unhandled exception: {e}'
+                if trash_after_download:
+                    status += ' / ' + trash_meeting_recording(config, meet)
+            except Exception as e:
+                logging.exception('Unhandled exception')
+                status += f'Unhandled exception: {e}'
 
-        fmt = '{:3} | MeetingID {} | {} | {} | {}'
-        line = fmt.format(idx + 1, meet.id, meet.start_time, meet.topic, status)
-        print(line)
+            fmt = '{:3} | MeetingID {} | {} | {} | {}'
+            line = fmt.format(idx + 1, meet.id, meet.start_time, meet.topic, status)
+            print(line)
 
 def restore_trashed_records(
     config: Config,
