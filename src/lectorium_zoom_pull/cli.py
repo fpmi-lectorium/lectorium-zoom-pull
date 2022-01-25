@@ -112,6 +112,8 @@ def list_records(
 @click.option('--host-email-regex')
 @click.option('--downloads-dir', required=True)
 @click.option('--trash-after-download/--no-trash-after-download', default=False)
+@click.option('--csv-log', required=True)
+@click.option('--csv-paths-relative-to', required=True)
 @pass_config
 def download_records(
     config: Config,
@@ -124,6 +126,8 @@ def download_records(
     host_email_regex,
     downloads_dir,
     trash_after_download,
+    csv_log,
+    csv_paths_relative_to,
 ):
     meeting_filter = make_meeting_filter(
         meeting_ids=meeting_ids,
@@ -140,6 +144,8 @@ def download_records(
         meeting_filter,
         downloads_dir,
         trash_after_download,
+        csv_log,
+        csv_paths_relative_to,
     )
 
 

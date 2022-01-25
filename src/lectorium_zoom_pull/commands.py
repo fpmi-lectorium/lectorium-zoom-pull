@@ -3,6 +3,7 @@ import re
 import typing as tp
 
 from lectorium_zoom_pull.config import Config
+from lectorium_zoom_pull.downloads import PathManager
 from lectorium_zoom_pull.models import Meeting
 from lectorium_zoom_pull.meetings import (
     fetch_all_meetings,
@@ -75,7 +76,10 @@ def download_records(
     meeting_filter: tp.Callable[[Meeting], bool],
     downloads_dir: str,
     trash_after_download: bool,
+    csv_log_path: str,
+    csv_paths_relative_to: str,
 ) -> None:
+    path_manager = PathManager(downloads_dir)
     all_meetings = fetch_all_meetings(
         config,
         from_date=from_date,
@@ -87,7 +91,14 @@ def download_records(
     for idx, meet in enumerate(meetings):
         status = ''
         try:
-            status += download_meeting_recording(config, downloads_dir, meet)
+            with open(csv_log_path, 'a') as csv_log:
+                status += download_meeting_recording(
+                    config,
+                    path_manager,
+                    csv_log,
+                    csv_paths_relative_to,
+                    meet
+                )
             if trash_after_download:
                 status += ' / ' + trash_meeting_recording(config, meet)
         except Exception as e:
