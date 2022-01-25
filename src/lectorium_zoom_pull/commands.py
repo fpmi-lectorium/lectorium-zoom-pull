@@ -76,6 +76,8 @@ def download_records(
     meeting_filter: tp.Callable[[Meeting], bool],
     downloads_dir: str,
     trash_after_download: bool,
+    csv_log_path: str,
+    csv_paths_relative_to: str,
 ) -> None:
     path_manager = PathManager(downloads_dir)
     all_meetings = fetch_all_meetings(
@@ -89,7 +91,14 @@ def download_records(
     for idx, meet in enumerate(meetings):
         status = ''
         try:
-            status += download_meeting_recording(config, path_manager, meet)
+            with open(csv_log_path, 'a') as csv_log:
+                status += download_meeting_recording(
+                    config,
+                    path_manager,
+                    csv_log,
+                    csv_paths_relative_to,
+                    meet
+                )
             if trash_after_download:
                 status += ' / ' + trash_meeting_recording(config, meet)
         except Exception as e:

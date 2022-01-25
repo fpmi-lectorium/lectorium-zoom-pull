@@ -183,7 +183,8 @@ def download_recording_file(
     prefix: str,
     meeting: Meeting,
     rfile: RecordingFile,
-) -> None:
+) -> str:
+    """Return value: file basename"""
     redirect = requests.get(
         rfile.download_url,
         allow_redirects=False,
@@ -217,10 +218,14 @@ def download_recording_file(
     logging.info('Downloading %s / %s', meeting.id, filename)
     subprocess.check_call(cmdline, cwd=prefix)
 
+    return filename
+
 
 def download_meeting_recording(
     config: Config,
     path_manager: PathManager,
+    csv_log: tp.TextIO,
+    csv_paths_relative_to: str,
     meeting: Meeting,
 ) -> str:
     files = list(filter(is_downloadable, meeting.recording_files))
@@ -235,6 +240,16 @@ def download_meeting_recording(
         return 'Already downloaded'
 
     for rfile in files:
-        download_recording_file(config, subdir, meeting, rfile)
+        basename = download_recording_file(config, subdir, meeting, rfile)
+        abs_path = os.path.join(subdir, basename)
+        csv_line = (
+            f'{meeting.id}\t' +
+            f'{meeting.uuid}\t' +
+            f'{meeting.start_time:%Y.%m.%d}\t' +
+            f'{meeting.start_time:%H-%M-%S%z}\t' +
+            os.path.relpath(abs_path, start=csv_paths_relative_to)
+        )
+        logging.debug('csv: %s', csv_line)
+        print(csv_line, file=csv_log)
 
     return f'Fetched {len(files)} files'
