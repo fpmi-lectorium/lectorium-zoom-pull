@@ -13,6 +13,7 @@ pass_config = click.make_pass_decorator(Config)
 def make_meeting_filter(
     meeting_ids: str = None,
     topic_contains: tp.Sequence[str] = None,
+    not_topic_contains: tp.Sequence[str] = None,
     topic_regex: str = None,
     host_email_contains: tp.Sequence[str] = None,
     host_email_regex: tp.Sequence[str] = None,
@@ -25,6 +26,10 @@ def make_meeting_filter(
     if topic_contains:
         substrings = list(topic_contains)
         filters.append(commands.Filter.topic_contains(substrings))
+    if not_topic_contains:
+        substrings = list(not_topic_contains)
+        positive_filter = commands.Filter.topic_contains(substrings)
+        filters.append(lambda meeting: not positive_filter(meeting))
     if topic_regex:
         expression = topic_regex
         filters.append(commands.Filter.topic_regex(expression))
@@ -68,6 +73,7 @@ def cli(ctx, debug, download_progress, secrets_dir):
 @click.option('--from-date')
 @click.option('--to-date')
 @click.option('--topic-contains', multiple=True)
+@click.option('--not-topic-contains', multiple=True)
 @click.option('--topic-regex')
 @click.option('--host-email-contains', multiple=True)
 @click.option('--host-email-regex')
@@ -77,12 +83,14 @@ def list_records(
     from_date,
     to_date,
     topic_contains,
+    not_topic_contains,
     topic_regex,
     host_email_contains,
     host_email_regex,
 ):
     meeting_filter = make_meeting_filter(
         topic_contains=topic_contains,
+        not_topic_contains=not_topic_contains,
         topic_regex=topic_regex,
         host_email_contains=host_email_contains,
         host_email_regex=host_email_regex,
@@ -101,6 +109,7 @@ def list_records(
 @click.option('--to-date')
 @click.option('--meeting-ids')
 @click.option('--topic-contains', multiple=True)
+@click.option('--not-topic-contains', multiple=True)
 @click.option('--topic-regex')
 @click.option('--host-email-contains', multiple=True)
 @click.option('--host-email-regex')
@@ -115,6 +124,7 @@ def download_records(
     to_date,
     meeting_ids,
     topic_contains,
+    not_topic_contains,
     topic_regex,
     host_email_contains,
     host_email_regex,
@@ -126,6 +136,7 @@ def download_records(
     meeting_filter = make_meeting_filter(
         meeting_ids=meeting_ids,
         topic_contains=topic_contains,
+        not_topic_contains=not_topic_contains,
         topic_regex=topic_regex,
         host_email_contains=host_email_contains,
         host_email_regex=host_email_regex,
@@ -146,6 +157,7 @@ def download_records(
 @cli.command('restore-trashed')
 @click.option('--meeting-ids')
 @click.option('--topic-contains', multiple=True)
+@click.option('--not-topic-contains', multiple=True)
 @click.option('--topic-regex')
 @click.option('--host-email-contains', multiple=True)
 @click.option('--host-email-regex')
@@ -154,6 +166,7 @@ def restore_trashed(
     config: Config,
     meeting_ids,
     topic_contains,
+    not_topic_contains,
     topic_regex,
     host_email_contains,
     host_email_regex,
@@ -161,6 +174,7 @@ def restore_trashed(
     meeting_filter = make_meeting_filter(
         meeting_ids=meeting_ids,
         topic_contains=topic_contains,
+        not_topic_contains=not_topic_contains,
         topic_regex=topic_regex,
         host_email_contains=host_email_contains,
         host_email_regex=host_email_regex,
