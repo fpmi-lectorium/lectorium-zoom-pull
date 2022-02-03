@@ -2,11 +2,9 @@ import json
 import logging
 import os
 import os.path
-import re
 import subprocess
 import urllib.parse
 import typing as tp
-import datetime
 
 import requests
 
@@ -118,7 +116,8 @@ def trash_meeting_recording(config: Config, meeting: Meeting) -> str:
     if rsp.status_code == 204:
         return 'Trashed'
     elif rsp.status_code == 200:
-        raise ValueError(f'API error for uuid {meeting.uuid}, details: {rsp.json()}')
+        raise ValueError(
+            f'API error for uuid {meeting.uuid}, details: {rsp.json()}')
     else:
         raise ValueError(
             'Bad status code {} for uuid {}, details: {}'.format(
@@ -154,7 +153,8 @@ def restore_meeting_recording(config: Config, meeting: Meeting) -> str:
     if rsp.status_code == 204:
         return 'Restored'
     elif rsp.status_code == 200:
-        raise ValueError(f'API error for uuid {meeting.uuid}, details: {rsp.json()}')
+        raise ValueError(
+            f'API error for uuid {meeting.uuid}, details: {rsp.json()}')
     else:
         raise ValueError(
             'Bad status code {} for uuid {}, details: {}'.format(

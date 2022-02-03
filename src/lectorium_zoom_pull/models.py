@@ -49,14 +49,14 @@ class Meeting(BaseModel):
     uuid: str
     id: str
     account_id: str
-    
+
     host_id: str
     host_email: str
     topic: str
-    
+
     start_time: datetime.datetime
     duration: tp.Optional[int]
-    
+
     total_size: int
     type: int
     recording_count: int

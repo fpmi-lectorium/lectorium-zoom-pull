@@ -43,7 +43,8 @@ def make_meeting_filter(
     if filters:
         return commands.Filter.conjunction(filters)
     else:
-        raise ValueError('Refusing to start without filters, specify at least one')
+        raise ValueError(
+            'Refusing to start without filters, specify at least one')
 
 
 @click.group()
@@ -114,7 +115,7 @@ def list_records(
 @click.option('--host-email-contains', multiple=True)
 @click.option('--host-email-regex')
 @click.option('--downloads-dir', required=True)
-@click.option('--trash-after-download/--no-trash-after-download', default=False)
+@click.option('--trash-after-download/--no-trash-after-download', default=False) # noqa
 @click.option('--csv-log', required=True)
 @click.option('--csv-paths-relative-to', required=True)
 @pass_config

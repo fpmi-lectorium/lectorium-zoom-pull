@@ -24,34 +24,29 @@ class Filter:
 
     @classmethod
     def meeting_id_in(cls, meeting_ids: tp.Set[str]) -> callable:
-        the_filter = lambda meeting: meeting.id in meeting_ids
-        return the_filter
+        return lambda meeting: meeting.id in meeting_ids
 
     @classmethod
     def topic_contains(cls, substrings: tp.List[str]) -> callable:
-        the_filter = lambda meeting: any(
+        return lambda meeting: any(
             meeting.topic.count(s) for s in substrings
         )
-        return the_filter
 
     @classmethod
     def topic_regex(cls, expression: str) -> callable:
         matcher = re.compile(expression)
-        the_filter = lambda meeting: bool(matcher.search(meeting.topic))
-        return the_filter
+        return lambda meeting: bool(matcher.search(meeting.topic))
 
     @classmethod
     def host_email_contains(cls, substrings: tp.List[str]) -> callable:
-        the_filter = lambda meeting: any(
+        return lambda meeting: any(
             meeting.host_email.count(s) for s in substrings
         )
-        return the_filter
 
     @classmethod
     def host_email_regex(cls, expression: str) -> callable:
         matcher = re.compile(expression)
-        the_filter = lambda meeting: bool(matcher.search(meeting.host_email))
-        return the_filter
+        return lambda meeting: bool(matcher.search(meeting.host_email))
 
 
 def list_records(
@@ -114,8 +109,9 @@ def download_records(
                 status += f'Unhandled exception: {e}'
 
             fmt = '{:3} | MeetingID {} | {} | {} | {}'
-            line = fmt.format(idx + 1, meet.id, meet.start_time, meet.topic, status)
-            print(line)
+            print(fmt.format(
+                idx + 1, meet.id, meet.start_time, meet.topic, status))
+
 
 def restore_trashed_records(
     config: Config,
@@ -136,5 +132,5 @@ def restore_trashed_records(
             status += f'Unhandled exception: {e}'
 
         fmt = '{:3} | MeetingID {} | {} | {} | {}'
-        line = fmt.format(idx + 1, meet.id, meet.start_time, meet.topic, status)
-        print(line)
+        print(fmt.format(
+            idx + 1, meet.id, meet.start_time, meet.topic, status))
