@@ -17,34 +17,28 @@ def make_meeting_filter(
     host_email_contains: tp.Sequence[str] = None,
     host_email_regex: tp.Sequence[str] = None,
 ) -> callable:
-    filters = [
-        meeting_ids,
-        topic_contains,
-        topic_regex,
-        host_email_contains,
-        host_email_regex,
-    ]
-    filters_count = sum(map(lambda arg: 1 if arg else 0, filters))
-    if filters_count > 1:
-        raise ValueError('Filters are mutually exclusive, specify exactly one')
+    filters = list()
 
     if meeting_ids:
         meeting_ids = set(meeting_ids.split(','))
-        return commands.Filter.meeting_id_in(meeting_ids)
-    elif topic_contains:
+        filters.append(commands.Filter.meeting_id_in(meeting_ids))
+    if topic_contains:
         substrings = list(topic_contains)
-        return commands.Filter.topic_contains(substrings)
-    elif topic_regex:
+        filters.append(commands.Filter.topic_contains(substrings))
+    if topic_regex:
         expression = topic_regex
-        return commands.Filter.topic_regex(expression)
-    elif host_email_contains:
+        filters.append(commands.Filter.topic_regex(expression))
+    if host_email_contains:
         substrings = list(host_email_contains)
-        return commands.Filter.host_email_contains(substrings)
-    elif host_email_regex:
+        filters.append(commands.Filter.host_email_contains(substrings))
+    if host_email_regex:
         expression = host_email_regex
-        return commands.Filter.host_email_regex(expression)
+        filters.append(commands.Filter.host_email_regex(expression))
+
+    if filters:
+        return commands.Filter.conjunction(filters)
     else:
-        raise ValueError('Refusing to start without filters, specify exactly one')
+        raise ValueError('Refusing to start without filters, specify at least one')
 
 
 @click.group()
