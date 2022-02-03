@@ -15,6 +15,14 @@ from lectorium_zoom_pull.meetings import (
 
 class Filter:
     @classmethod
+    def _apply(cls, filters: tp.List[callable], meeting: Meeting):
+        return map(lambda f: f(meeting), filters)
+
+    @classmethod
+    def conjunction(cls, filters: tp.List[callable]) -> callable:
+        return lambda meeting: all(cls._apply(filters, meeting))
+
+    @classmethod
     def meeting_id_in(cls, meeting_ids: tp.Set[str]) -> callable:
         the_filter = lambda meeting: meeting.id in meeting_ids
         return the_filter
