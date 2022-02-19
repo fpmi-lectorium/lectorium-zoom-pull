@@ -28,7 +28,7 @@ class Filter:
 
     @classmethod
     def topic_contains(cls, substrings: tp.List[str]) -> callable:
-        substrings = map(str.lower, substrings)
+        substrings = list(map(str.lower, substrings))
         return lambda meeting: any(
             meeting.topic.lower().count(s) for s in substrings
         )
