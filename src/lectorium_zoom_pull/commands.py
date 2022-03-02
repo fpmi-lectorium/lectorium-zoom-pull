@@ -96,14 +96,15 @@ def download_records(
         for idx, meet in enumerate(meetings):
             status = ''
             try:
-                status += download_meeting_recording(
+                did_download, download_status = download_meeting_recording(
                     config,
                     path_manager,
                     csv_log,
                     csv_paths_relative_to,
                     meet
                 )
-                if trash_after_download:
+                status += download_status
+                if did_download and trash_after_download:
                     status += ' / ' + trash_meeting_recording(config, meet)
             except Exception as e:
                 logging.exception('Unhandled exception')

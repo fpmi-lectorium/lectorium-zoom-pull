@@ -227,17 +227,20 @@ def download_meeting_recording(
     csv_log: tp.TextIO,
     csv_paths_relative_to: str,
     meeting: Meeting,
-) -> str:
+) -> tp.Tuple[bool, str]:
+    """
+    Return value: (did_download, message)
+    """
     files = list(filter(is_downloadable, meeting.recording_files))
     if len(files) == 0:
-        return 'No downloadable files'
+        return False, 'No downloadable files'
 
     subdir = None
     try:
         subdir = path_manager.mkdir_for(meeting)
         logging.debug('Subdir: %s', subdir)
     except FileExistsError:
-        return 'Already downloaded'
+        return False, 'Already downloaded'
 
     for rfile in files:
         basename = download_recording_file(config, subdir, meeting, rfile)
@@ -252,4 +255,4 @@ def download_meeting_recording(
         logging.debug('csv: %s', csv_line)
         print(csv_line, file=csv_log)
 
-    return f'Fetched {len(files)} files'
+    return True, f'Fetched {len(files)} files'
